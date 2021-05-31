@@ -1,309 +1,524 @@
-#include <windows.h>
+#include<windows.h>
+#include<math.h>
 #include <stdio.h>
-#include <math.h>
-
-#define width 1000
+#include <stdlib.h>
 #define n 10
+/*double** randm(int rows, int cols){
+                double** matrix = (double**)malloc(rows * sizeof(double*));
+                for (int i = 0; i < rows; i++)
+                    matrix[i] = (double*)malloc(cols * sizeof(double));
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        if (j >= i) {
+                            matrix[i][j] =  2.0 * rand()/RAND_MAX;
+                        } else matrix[i][j] = matrix[j][i];
+                    }
+                }
+                return matrix;
+            }
+double** mulmr(double coef, double **matrix, int rows, int cols){
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrix[i][j] = matrix[i][j] * coef;
+                        if(matrix[i][j] > 1.0) {
+                            matrix[i][j] = 1;
+                        } else matrix[i][j] = 0;
+                        }
+                }
+                return matrix;
+            }
 
-//Создаём прототип функции окна, которая будет определена ниже
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
 
-
-void paint(int dx, int dy, int dtx, int nx[], int ny[], int hdc, int BPen, int nn[]) {
-
-    for (int a = 0; a < 3; a++) {
-        nx[a + 1] = nx[a] + 100;
-        ny[a + 1] = ny[a];
-        SelectObject(hdc, BPen);
-        Ellipse(hdc, nx[a] - dx, ny[a] - dy, nx[a] + dx, ny[a] + dy);
-        TextOut(hdc, nx[a] - dtx, ny[a] - dy / 2, nn[a], 1);
-    }
-
-    for (int a = 3; a < 5; a++) {
-        nx[a + 1] = nx[a];
-        ny[a + 1] = ny[a] + 100;
-        SelectObject(hdc, BPen);
-        Ellipse(hdc, nx[a] - dx, ny[a] - dy, nx[a] + dx, ny[a] + dy);
-        TextOut(hdc, nx[a] - dtx, ny[a] - dy / 2, nn[a], 1);
-    }
-
-    for (int a = 5; a < 8; a++) {
-        nx[a + 1] = nx[a] - 100;
-        ny[a + 1] = ny[a];
-        SelectObject(hdc, BPen);
-        Ellipse(hdc, nx[a] - dx, ny[a] - dy, nx[a] + dx, ny[a] + dy);
-        TextOut(hdc, nx[a] - dtx, ny[a] - dy / 2, nn[a], 1);
-    }
-
-    for (int a = 8; a < 10; a++) {
-        nx[a + 1] = nx[a];
-        ny[a + 1] = ny[a] - 100;
-        SelectObject(hdc, BPen);
-        Ellipse(hdc, nx[a] - dx, ny[a] - dy, nx[a] + dx, ny[a] + dy);
-        TextOut(hdc, nx[a] - dtx, ny[a] - dy / 2, nn[a], 1);
-    }
-
-}
-
-void arrow(int px, int py, int dx, int dy, HDC hdc) {
-    int lx, ly = py, rx = px, ry;
-    if (dx == 0) return;
-    else lx = px + (dx / abs(dx)) * 10;
-    if (dy == 0) {
-        ly = py - 10;
-        ry = py + 10;
-        lx = px + (10 * dx / abs(dx));
-        rx = lx;
-    }
-    else ry = py + (dy / abs(dy)) * 10;
-    MoveToEx(hdc, lx, ly, NULL);
-    LineTo(hdc, px, py);
-    LineTo(hdc, rx, ry);
-}
-
-void paintLine1(int matrix[n][n], HDC hdc, int dx, int dy, int nx [], int ny []) {
-    int  radius = 16, divine = 1, xDif, yDif;
-    float koef = 1.0 - 0 * 0.02 - 2 * 0.005 - 0.25;
-    for (int start = 0; start < n; start++) {
-        for (int end = 0; end < n; end++) {
-            if (matrix[start][end] == 1) {
-                xDif = nx[start] - nx[end];
-                yDif = ny[start] - ny[end];
-                koef = sqrt(xDif * xDif + yDif * yDif) / radius;
-                dx = xDif / koef;
-                dy = yDif / koef;
-                if (start == end) {
-                    MoveToEx(hdc, nx[end], ny[end], NULL);
-                    LineTo(hdc, nx[end] + 40, ny[end] + 10);
-                    LineTo(hdc, nx[end] + 40, ny[end] + 40);
-                    LineTo(hdc, nx[end] + 10, ny[end] + 40);
-                    LineTo(hdc, nx[end], ny[end]);
-                    arrow(nx[end] + 2, ny[end] + 13, 2, 13, hdc);
-                }
-                else if (matrix[start][end] == 1 && matrix[end][start] == 1) {
-                    MoveToEx(hdc, nx[start], ny[start], NULL);
-                    LineTo(hdc, nx[end] + xDif / 2 + (20 * divine), ny[end] + yDif / 2 + (20 * divine));
-                    LineTo(hdc, nx[end], ny[end]);
-                    arrow(nx[end] + dx, ny[end] + dy, dx, dy, hdc);
-                    divine = -divine;
-                }
-                else {
-                    MoveToEx(hdc, nx[start], ny[start], NULL);
-                    if (yDif == 0 && abs(xDif) > 300 && end <= 3) {
-                        LineTo(hdc, nx[end] + xDif / 2, ny[end] - 35);
-                        dx = xDif / 2 / koef;
-                        dy = (yDif - 35) / koef;
-                    }
-                    else if (abs(xDif) == 300 && abs(yDif) == 300 && (end == 0 || end == 3)) {
-                        LineTo(hdc, nx[end] + xDif / 2, ny[end] + yDif / 1);
-                        dx = xDif / 2 / koef;
-                        dy = yDif / koef;
-                    }
-                    LineTo(hdc, nx[end], ny[end]);
-                    arrow(nx[end] + dx, ny[end] + dy, dx, dy, hdc);
-                }
-            }
-        }
-    }
-}
-
-void paintLine2(int matrix[n][n], HDC hdc, int dx, int dy, int nx[], int ny[]) {
-    int  radius = 16, divine = 1, xDif, yDif;
-    float koef = 1.0 - 0 * 0.02 - 2 * 0.005 - 0.25;
-    for (int start = 0; start < n; start++) {
-        for (int end = 0; end < n; end++) {
-            if (matrix[start][end] == 1) {
-                xDif = nx[start] - nx[end];
-                yDif = ny[start] - ny[end];
-                koef = sqrt(xDif * xDif + yDif * yDif) / radius;
-                dx = xDif / koef;
-                dy = yDif / koef;
-                if (start == end) {
-                    MoveToEx(hdc, nx[end], ny[end], NULL);
-                    LineTo(hdc, nx[end] + 40, ny[end] + 10);
-                    LineTo(hdc, nx[end] + 40, ny[end] + 40);
-                    LineTo(hdc, nx[end] + 10, ny[end] + 40);
-                    LineTo(hdc, nx[end], ny[end]);
-                    //arrow(nx[end] + 2, ny[end] + 13, 2, 13, hdc);
-                }
-                else if (matrix[start][end] == 1 && matrix[end][start] == 1) {
-                    MoveToEx(hdc, nx[start], ny[start], NULL);
-                    LineTo(hdc, nx[end] + xDif / 2 + (20 * divine), ny[end] + yDif / 2 + (20 * divine));
-                    LineTo(hdc, nx[end], ny[end]);
-
-                    divine = -divine;
-                }
-                else {
-                    MoveToEx(hdc, nx[start], ny[start], NULL);
-                    if (yDif == 0 && abs(xDif) > 300 && end <= 3) {
-                        LineTo(hdc, nx[end] + xDif / 2, ny[end] - 35);
-                        dx = xDif / 2 / koef;
-                        dy = (yDif - 35) / koef;
-                    }
-                    else if (abs(xDif) == 300 && abs(yDif) == 300 && (end == 0 || end == 3)) {
-                        LineTo(hdc, nx[end] + xDif / 2, ny[end] + yDif / 1);
-                        dx = xDif / 2 / koef;
-                        dy = yDif / koef;
-                    }
-                    LineTo(hdc, nx[end], ny[end]);
-
-                }
-            }
-        }
-    }
-}
-//объявляем строку-имя программы
-char ProgName[] = "LabGraf";
-
-
-int matrix[n][n] = {
-        {0, 1, 0, 0, 0, 1, 1, 0, 0, 0},
-        {1, 0, 0, 0, 1, 1, 1, 1, 0, 0},
-        {1, 0, 0, 1, 0, 1, 0, 1, 0, 0},
-        {0, 1, 1, 0, 1, 0, 1, 1, 0, 1},
-        {1, 0, 0, 1, 0, 0, 0, 0, 0, 0},
-        {0, 0, 1, 0, 1, 0, 1, 0, 0, 1},
-        {0, 1, 0, 1, 1, 0, 0, 1, 0, 1},
-        {0, 1, 0, 1, 1, 0, 0, 0, 1, 0},
-        {0, 0, 1, 1, 1, 0, 0, 0, 0, 0},
-        {0, 1, 0, 1, 1, 1, 0, 0, 0, 1},
+char ProgName[]="Lab 3";
+matrix[n][n]={
+{0, 1, 0, 0, 0, 0, 1, 1, 0, 0},
+{1, 0, 0, 0, 0, 0, 1, 0, 1, 0},
+{0, 0, 0, 0, 1, 1, 0, 0, 0, 0},
+{0, 0, 0, 1, 1, 0, 1, 0, 1, 0},
+{0, 0, 1, 1, 0, 0, 1, 0, 0, 0},
+{0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+{1, 1, 0, 1, 1, 0, 0, 0, 1, 0},
+{1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+{0, 1, 0, 1, 0, 0, 1, 0, 1, 1},
+{0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
 };
-
-int matrixA[n][n] = {
-        {0, 1, 1, 0, 1, 1, 1, 0, 0, 0},
-        {1, 0, 0, 1, 1, 1, 1, 1, 0, 0},
-        {1, 0, 0, 1, 0, 1, 0, 1, 1, 0},
-        {0, 1, 1, 0, 1, 0, 1, 1, 1, 1},
-        {1, 1, 0, 1, 0, 1, 0, 1, 1, 1},
-        {1, 1, 1, 0, 1, 0, 0, 0, 0, 1},
-        {1, 1, 0, 1, 0, 0, 0, 1, 0, 1},
-        {0, 1, 1, 1, 1, 0, 1, 0, 1, 0},
-        {0, 0, 1, 1, 1, 0, 0, 1, 0, 0},
-        {0, 0, 0, 1, 1, 1, 1, 0, 0, 1},
-};
-
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
 {
     HWND hWnd;
     MSG lpMsg;
-
-    WNDCLASS w; //создаём экземпляр структуры WNDCLASS
-
-    w.lpszClassName = ProgName; //имя программы - объявлено выше
-    w.hInstance = hInstance; //идентификатор текущего приложения
-    w.lpfnWndProc = WndProc; //указатель на функцию окна
-    w.hCursor = LoadCursor(NULL, IDC_ARROW); //загружаем курсор
-    w.hIcon = 0; //иконки у нас не будет пока
-    w.lpszMenuName = 0; //и меню пока не будет
-    w.hbrBackground = WHITE_BRUSH; //LTGRAY_BRUSH; цвет фона окна
-    w.style = CS_HREDRAW | CS_VREDRAW; //стиль - перерисовываемое по х и по у
+    WNDCLASS w;
+    w.lpszClassName = ProgName;
+    w.hInstance = hInstance;
+    w.lpfnWndProc = WndProc;
+    w.hCursor = LoadCursor(NULL, IDC_ARROW);
+    w.hIcon = 0;
+    w.lpszMenuName = 0;
+    w.hbrBackground = NULL_BRUSH;
+    w.style = CS_HREDRAW|CS_VREDRAW;
     w.cbClsExtra = 0;
     w.cbWndExtra = 0;
 
-    if (!RegisterClass(&w))
+    if(!RegisterClass(&w))
+    {
         return 0;
+    }
 
-    //Создадим окно в памяти, заполнив аргументы CreateWindow
-    hWnd = CreateWindow(ProgName, //Имя программы
-        L"LabGraf Vasyleva", //Заголовок окна
-        WS_OVERLAPPEDWINDOW, //Стиль окна - перекрывающееся
-        100, //положение окна на экране по х
-        100, //положение по у
-        720+360, //ширина окна
-        500, //высота окна
-        (HWND)NULL, //идентификатор родительского окна
-        (HMENU)NULL, //идентификатор меню
-        (HINSTANCE)hInstance, //идентификатор экземпляра программы
-        (HINSTANCE)NULL); //отсутствие дополнительных параметров
-
+    hWnd = CreateWindow(ProgName,
+                      L"vasyleva",
+                      WS_OVERLAPPEDWINDOW,
+                      150, 150,
+                      800, 800,
+                      (HWND)NULL, (HMENU)NULL,
+                      (HINSTANCE)hInstance, (HINSTANCE)NULL);
 
     ShowWindow(hWnd, nCmdShow);
 
-    while (GetMessage(&lpMsg, hWnd, 0, 0)) { //Получаем сообщение из очереди
-        TranslateMessage(&lpMsg); //Преобразует сообщения клавиш в символы
-        DispatchMessage(&lpMsg); //Передаёт сообщение соответствующей функции окна
+    while(GetMessage(&lpMsg, hWnd, 0, 0))
+    {
+    TranslateMessage(&lpMsg);
+    DispatchMessage(&lpMsg);
     }
 
     return(lpMsg.wParam);
 }
 
-//Функция окна
-LRESULT CALLBACK WndProc(HWND hWnd, UINT messg,
-    WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
 {
-    HDC hdc; //создаём контекст устройства
-    PAINTSTRUCT ps; //создаём экземпляр структуры графического вывода
+    HDC hdc;
+    PAINTSTRUCT ps;
 
+    switch(messg)
+    {
+        case WM_PAINT :
+        hdc=BeginPaint(hWnd, &ps);
 
-    //randMatrix(koef);
+        char *nn[n] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+        int nx[n] = {};
+        int ny[n] = {};
+        int num = 150;
+        for(int i = 0; i < n; i++)
+        {
+            if(i == 0)
+            {
+                nx[i] = num;
+                ny[i] = num;
+            } else if(i <= 2)
+            {
+                nx[i] = nx[i - 1] + num;
+                ny[i] = ny[i - 1];
+            } else if(i <= 5)
+            {
+                nx[i] = nx[i - 1];
+                ny[i] = ny[i - 1] + num;
+            } else if(i <= 7)
+            {
+                nx[i] = nx[i - 1] - num;
+                ny[i] = ny[i - 1];
+            } else
+            {
+            nx[i] = nx[i - 1];
+            ny[i] = ny[i - 1] - num;
+            }
+        }
+        int dx = 16, dy = 16, dtx = 7;
+        int i;
 
+        HPEN BPen = CreatePen(PS_SOLID, 2, RGB(50, 0, 255));
+        HPEN KPen = CreatePen(PS_SOLID, 1, RGB(20, 20, 5));
 
-    //Цикл обработки сообщений
-    switch (messg) {
-        //сообщение рисования
-    case WM_PAINT:
+        srand(0402);
+        double** T = randm(n, n);
+        double coef = 1.0 - 0*0.02 - 2*0.005 - 0.25;
+        double** A = mulmr(coef, T, n, n);
 
-        hdc = BeginPaint(hWnd, &ps);
-        char* nn[n] = {"0", "1", "2", "3", "4", "5", "6", "7", "8", "9"};
-        int nx[n+1] = {100},
-            ny[n+1] = {100},
-            nx2[n+1] = {600},
-            ny2[n+1] = {100};
-        int dx = 16, dy = 16, dtx = 5;
-
-
-        HPEN BPen = CreatePen(PS_SOLID, 2, RGB(50, 0, 255)); // border
-        HPEN KPen = CreatePen(PS_SOLID, 1, RGB(20, 20, 5)); // line
-
-        paint(dx, dy, dtx, nx, ny, hdc, BPen, nn);
-        paint(dx, dy, dtx, nx2, ny2, hdc, BPen, nn);
+        printf("Matrix (non directed):\n");
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                printf("%g ", A[i][j]);
+            }
+            printf("\n");
+        }
 
         SelectObject(hdc, KPen);
 
-        paintLine1(matrix, hdc, dx, dy,  nx, ny);
-        paintLine2(matrixA, hdc, dx, dy, nx2, ny2);
+        int nx1, ny1;
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                if((A[i][j] == 1) && (j >= i)) {
+                    if(i == j) {
+                        Arc(hdc, nx[j], ny[j], nx[j]-30, ny[j]-30, nx[j], ny[j], nx[j], ny[j]);
+                        continue;
+                    }
+                    if ((i == j+1)||(i == j-1)) {
+                        MoveToEx(hdc, nx[i], ny[i], NULL);
+                        LineTo(hdc, nx[j], ny[j]);
+                        continue;
+                    }
+                    if((i < 2) && (j < 2)) {
+                         nx1 = (nx[i] + nx[j])/2 + 70;
+                         ny1 = (ny[i] + ny[j])/2 - 70;
+                         MoveToEx (hdc, nx[j], ny[j], NULL);
+                         LineTo (hdc, nx1, ny1);
+                         MoveToEx (hdc, nx1, ny1, NULL);
+                         LineTo (hdc, nx[i], ny[i]);
+                         continue;
+                    }
+                    if ((i >= 2) &&(i <= 5) && (j >= 2) &&(j <= 5)) {
+                         nx1 = (nx[i] + nx[j])/2 + 70;
+                         ny1 = (ny[i] + ny[j])/2 - 70;
+                         MoveToEx (hdc, nx[j], ny[j], NULL);
+                         LineTo (hdc, nx1, ny1);
+                         MoveToEx (hdc, nx1, ny1, NULL);
+                         LineTo (hdc, nx[i], ny[i]);
+                        continue;
+                    }
+                    if ((i > 5) &&(i < 7)&& (j > 5) &&(j < 7)) {
+                        nx1 = (nx[i] + nx[j])/2 - 70;
+                        ny1 = (ny[i] + ny[j])/2 + 70;
+                        MoveToEx (hdc, nx[j], ny[j], NULL);
+                        LineTo (hdc, nx1, ny1);
+                        MoveToEx (hdc, nx1, ny1, NULL);
+                        LineTo (hdc, nx[i], ny[i]);
+                        continue;
+                    }
+                    if (((i >= 7) || (i == 0)) && ((j >= 7)||(j == 0))) {
+                         nx1 = (nx[i] + nx[j])/2 - 70;
+                         ny1 = (ny[i] + ny[j])/2 + 70;
+                         MoveToEx (hdc, nx[j], ny[j], NULL);
+                         LineTo (hdc, nx1, ny1);
+                         MoveToEx (hdc, nx1, ny1, NULL);
+                         LineTo (hdc, nx[i], ny[i]);
+                        continue;
+                    }
+                    MoveToEx(hdc, nx[i], ny[i], NULL);
+                    LineTo(hdc, nx[j], ny[j]);
 
-        paint(dx, dy, dtx, nx, ny, hdc, BPen, nn);
-        paint(dx, dy, dtx, nx2, ny2, hdc, BPen, nn);
-        EndPaint(hWnd, &ps);//малювання закінчене
+                    }
+
+            }
+        }
+
+        SelectObject(hdc, BPen);
+            for(i=0;i < n;i++){
+              Ellipse(hdc, nx[i]-dx,ny[i]-dy,nx[i]+dx,ny[i]+dy);
+              TextOut(hdc, nx[i]-dtx,ny[i]-dy/2,  nn[i], 2);
+            }
+
+        EndPaint(hWnd, &ps);
         break;
 
-    //сообщение выхода - разрушение окна
-    case WM_DESTROY:
-        PostQuitMessage(0); //Посылаем сообщение выхода с кодом 0 - нормальное завершение
+        case WM_DESTROY:
+        PostQuitMessage(0);
         break;
 
-    default:
-        return(DefWindowProc(hWnd, messg, wParam, lParam)); //освобождаем очередь приложения от нераспознаных
+        default:
+        return(DefWindowProc(hWnd, messg, wParam, lParam));
     }
     return 0;
 }
 
-  void showMatrix(int matrix[n][n]) {
-      for (int i = 0; i < n; i++) {
-          for (int j = 0; j < n; j++) {
-              printf("%d ", matrix[i][j]);
-         }
-         printf("\n");
-     }
-  }
+*/
 
 
-int** randMatrix(float k) {
-    srand(0402);
-    int matrix[n][n];
-    float num;
-    int element;
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            num = (rand() / (float)RAND_MAX * 2) * k;
-            if (num < 1) element = 0;
-            else element = 1;
-            matrix[i][j] = element;
-            printf("%d ", element);
-        }
-        printf("\n");
+//directed
+double** randm(int rows, int cols){
+                double** matrix = (double**)malloc(rows * sizeof(double*));
+                for (int i = 0; i < rows; i++)
+                    matrix[i] = (double*)malloc(cols * sizeof(double));
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        if (j >= i) {
+                            matrix[i][j] =  2.0 * rand()/RAND_MAX;
+                        } else matrix[i][j] = matrix[j][i];
+                    }
+                }
+                return matrix;
+            }
+double** mulmr(double coef, double **matrix, int rows, int cols){
+                for (int i = 0; i < rows; i++) {
+                    for (int j = 0; j < cols; j++) {
+                        matrix[i][j] = matrix[i][j] * coef;
+                        if(matrix[i][j] > 1.0) {
+                            matrix[i][j] = 1;
+                        } else matrix[i][j] = 0;
+                        }
+                }
+                return matrix;
+            }
+
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+
+char ProgName[]="Lab 3";
+matrix[n][n]={
+{0, 1, 0, 0, 0, 0, 1, 1, 0, 0},
+{1, 0, 0, 0, 0, 0, 1, 0, 1, 0},
+{0, 0, 0, 0, 1, 1, 0, 0, 0, 0},
+{0, 0, 0, 1, 1, 0, 1, 0, 1, 0},
+{0, 0, 1, 1, 0, 0, 1, 0, 0, 0},
+{0, 0, 1, 0, 0, 0, 0, 0, 0, 0},
+{1, 1, 0, 1, 1, 0, 0, 0, 1, 0},
+{1, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+{0, 1, 0, 1, 0, 0, 1, 0, 1, 1},
+{0, 0, 0, 0, 0, 0, 0, 0, 1, 0},
+};
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int nCmdShow)
+{
+    HWND hWnd;
+    MSG lpMsg;
+    WNDCLASS w;
+    w.lpszClassName = ProgName;
+    w.hInstance = hInstance;
+    w.lpfnWndProc = WndProc;
+    w.hCursor = LoadCursor(NULL, IDC_ARROW);
+    w.hIcon = 0;
+    w.lpszMenuName = 0;
+    w.hbrBackground = NULL_BRUSH;
+    w.style = CS_HREDRAW|CS_VREDRAW;
+    w.cbClsExtra = 0;
+    w.cbWndExtra = 0;
+
+    if(!RegisterClass(&w))
+    {
+        return 0;
     }
-    return matrix;
+
+    hWnd = CreateWindow(ProgName,
+                      L"Vasyleva",
+                      WS_OVERLAPPEDWINDOW,
+                      150, 150,
+                      800, 800,
+                      (HWND)NULL, (HMENU)NULL,
+                      (HINSTANCE)hInstance, (HINSTANCE)NULL);
+
+    ShowWindow(hWnd, nCmdShow);
+
+    while(GetMessage(&lpMsg, hWnd, 0, 0))
+    {
+    TranslateMessage(&lpMsg);
+    DispatchMessage(&lpMsg);
+    }
+
+    return(lpMsg.wParam);
 }
+
+LRESULT CALLBACK WndProc(HWND hWnd, UINT messg, WPARAM wParam, LPARAM lParam)
+{
+    HDC hdc;
+    PAINTSTRUCT ps;
+    void arrow(float fi, int px,int py)//add
+    {
+        //fi = 3.1416*(180.0 - fi)/180.0;
+        int lx,ly,rx,ry;
+        lx = px+15*cos(fi+0.3);
+        rx = px+15*cos(fi-0.3);
+        ly = py+15*sin(fi+0.3);
+        ry = py+15*sin(fi-0.3);
+        MoveToEx(hdc, lx, ly, NULL);
+        LineTo(hdc, px, py);
+        LineTo(hdc, rx, ry);
+    }
+
+    switch(messg)
+    {
+        case WM_PAINT :
+        hdc=BeginPaint(hWnd, &ps);
+
+        char *nn[n] = {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"};
+        int nx[n] = {};
+        int ny[n] = {};
+        int num = 150;
+        for(int i = 0; i < n; i++)
+        {
+            if(i == 0)
+            {
+                nx[i] = num;
+                ny[i] = num;
+            } else if(i <= 2)
+            {
+                nx[i] = nx[i - 1] + num;
+                ny[i] = ny[i - 1];
+            } else if(i <= 5)
+            {
+                nx[i] = nx[i - 1];
+                ny[i] = ny[i - 1] + num;
+            } else if(i <= 7)
+            {
+                nx[i] = nx[i - 1] - num;
+                ny[i] = ny[i - 1];
+            } else
+            {
+            nx[i] = nx[i - 1];
+            ny[i] = ny[i - 1] - num;
+            }
+        }
+        int dx = 16, dy = 16, dtx = 7;
+        int i;
+
+        HPEN BPen = CreatePen(PS_SOLID, 2, RGB(50, 0, 255));
+        HPEN KPen = CreatePen(PS_SOLID, 1, RGB(20, 20, 5));
+
+        srand(0402);
+        double** T = randm(n, n);
+        double coef = 1.0 - 0*0.02 - 2*0.005 - 0.25;
+        double** A = mulmr(coef, T, n, n);
+
+        printf("Matrix (directed):\n");
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                printf("%g ", A[i][j]);
+            }
+            printf("\n");
+        }
+
+        SelectObject(hdc, KPen);
+
+        int nx1, ny1;
+        for(int i = 0; i < n; i++) {
+            for(int j = 0; j < n; j++) {
+                if((A[i][j] == 1) && (j >= i)) {
+                    if(i == j) {
+                        Arc(hdc, nx[j], ny[j], nx[j]-30, ny[j]-30, nx[j], ny[j], nx[j], ny[j]);
+                        arrow((-115*3.1416)/180, nx[j], ny[j]-dy);//add
+                        continue;
+                    }
+                    if ((i == j+1)||(i == j-1)) {
+                        MoveToEx(hdc, nx[i], ny[i], NULL);
+                        LineTo(hdc, nx[j], ny[j]);
+                        arrow((-180*3.1416)/180, nx[1]-16*cos(-95), ny[1]+16*sin(-85)-3);
+
+                        Arc(hdc, nx[0], ny[0]-47, nx[1], ny[1]+47, nx[1], ny[1], nx[0], ny[0]);
+                        arrow((-30*3.1416)/180, nx[0], ny[0]-dy);
+                        arrow((-270*3.1416)/180, nx[9], ny[9]+dy);//9-10
+
+                        Arc(hdc, nx[9]-40, ny[9], nx[8]+40, ny[8], nx[8], ny[8], nx[9], ny[9]);
+                        arrow((-30*3.1416)/180, nx[8]-16*cos(-34), ny[8]+16*sin(-28)-3);//10-9
+
+                        Arc(hdc, nx[4]-40, ny[4], nx[3]+40, ny[3], nx[3], ny[3], nx[4], ny[4]);
+                        arrow((-220*3.1416)/180, nx[3]+16*cos(-34), ny[3]-16*sin(-8)-3);//4-5
+                        arrow((-90*3.1416)/180, nx[4], ny[4]-dy);//5
+
+                        Arc(hdc, nx[5]-40, ny[5], nx[2]+40, ny[2], nx[2], ny[2], nx[5], ny[5]);
+                        arrow((-230*3.1416)/180, nx[2]+16*cos(-35), ny[2]-16*sin(-8)-3);//6-3
+
+
+                        Arc(hdc, nx[0]-180, ny[0], nx[6]+180, ny[6], nx[6], ny[6], nx[0], ny[0]);
+                        arrow((-30*3.1416)/180, nx[6]-16*cos(-35), ny[6]+16*sin(-8.8)-3);
+                        arrow((-290*3.1416)/180, nx[0]-16*cos(-33.3), ny[0]+16*sin(-10)+4);//7-1 perfect
+
+                        Arc(hdc, nx[3]+120, ny[3], nx[6]-120, ny[6], nx[6], ny[6], nx[3], ny[3]);
+
+
+                        Arc(hdc, nx[1]+130, ny[1], nx[8]-130, ny[8], nx[8], ny[8], nx[1], ny[1]);
+                        arrow((-320*3.1416)/180, nx[1]+16*cos(-93), ny[1]-16*sin(-8)-3);//2-9
+                        arrow((-350*3.1416)/180, nx[8]-16*cos(-34), ny[8]+16*sin(-28)-3);
+                        arrow((-40*3.1416)/180, nx[8]-16*cos(-83.6), ny[8]+16*sin(-8)+1);//2-9 perf
+
+
+                        Arc(hdc, nx[3], ny[3]-130, nx[8], ny[8]+130, nx[8], ny[8], nx[3], ny[3]);
+
+
+                        Arc(hdc, nx[8]-150, ny[8], nx[6]+150, ny[6], nx[6], ny[6], nx[8], ny[8]);
+                        arrow((-360*3.1416)/180, nx[8]+16*cos(-44), ny[8]-16*sin(-28)-3);//9-7
+
+                        arrow((-40*3.1416)/180, nx[6]-16*cos(-83.6), ny[6]+16*sin(-8)+1);//7-4
+                        arrow((-290*3.1416)/180, nx[3]+16*cos(-35.7), ny[3]-16*sin(-8)+1);//7-4
+                        continue;
+                    }
+                    if((i < 2) && (j < 2)) {
+                         nx1 = (nx[i] + nx[j])/2 + 70;
+                         ny1 = (ny[i] + ny[j])/2 - 70;
+                         MoveToEx (hdc, nx[j], ny[j], NULL);
+                         LineTo (hdc, nx1, ny1);
+                         MoveToEx (hdc, nx1, ny1, NULL);
+                         LineTo (hdc, nx[i], ny[i]);
+                         arrow((-50*3.1416)/180, nx[j], ny[j]+dy);//add
+                         continue;
+                    }
+                    if ((i >= 2) &&(i <= 5) && (j >= 2) &&(j <= 5)) {
+                         nx1 = (nx[i] + nx[j])/2 + 70;
+                         ny1 = (ny[i] + ny[j])/2 - 70;
+                         MoveToEx (hdc, nx[j], ny[j], NULL);
+                         LineTo (hdc, nx1, ny1);
+                         MoveToEx (hdc, nx1, ny1, NULL);
+                         LineTo (hdc, nx[i], ny[i]);
+                         //arrow((-90*3.1416)/180, nx[j], ny[j]+dy);//add
+                         arrow((-70*3.1416)/180, nx[j]+dx*cos(-143), ny[j]-dy*sin(-140)-27);//6
+
+                         Arc(hdc, nx[7]-60, ny[7], nx[0]+60, ny[0], nx[0], ny[0], nx[7], ny[7]);
+
+                        arrow((-250*3.1416)/180, nx[0]+16*cos(-34), ny[0]-16*sin(-9)-3);
+
+                        Arc(hdc, nx[4]-40, ny[4], nx[2]+40, ny[2], nx[2], ny[2], nx[4], ny[4]);
+                        arrow((-250*3.1416)/180, nx[2]+16*cos(-34), ny[2]-16*sin(-8)-3);//3-5
+
+                        arrow((-50*3.1416)/180, nx[4]+dx*cos(-143), ny[4]-dy*sin(-140)-30);//3-5
+                        continue;
+                    }
+                    if ((i > 5) &&(i < 7)&& (j > 5) &&(j < 7)) {
+                        nx1 = (nx[i] + nx[j])/2 - 70;
+                        ny1 = (ny[i] + ny[j])/2 + 70;
+                        MoveToEx (hdc, nx[j], ny[j], NULL);
+                        LineTo (hdc, nx1, ny1);
+                        MoveToEx (hdc, nx1, ny1, NULL);
+                        LineTo (hdc, nx[i], ny[i]);
+                        //arrow((-90*3.1416)/180, nx[j], ny[j]+dy);//add
+                        arrow((-110*3.1416)/180, nx[j]+dx*cos(-130), ny[j]-dy*sin(-140)-27);
+                        continue;
+                    }
+                    if (((i >= 7) || (i == 0)) && ((j >= 7)||(j == 0))) {
+                         nx1 = (nx[i] + nx[j])/2 - 70;
+                         ny1 = (ny[i] + ny[j])/2 + 70;
+                         MoveToEx (hdc, nx[j], ny[j], NULL);
+                         LineTo (hdc, nx1, ny1);
+                         MoveToEx (hdc, nx1, ny1, NULL);
+                         LineTo (hdc, nx[i], ny[i]);
+                         arrow((-110*3.1416)/180, nx[j]+dx*cos(-130), ny[j]-dy*sin(-140)-27);/*nx[j], ny[j]-dy);*///add
+                         Arc(hdc, nx[6]+40, ny[6], nx[1]-40, ny[1], nx[1], ny[1], nx[6], ny[6]);//2-7
+                        // arrow((-130*3.1416)/180, nx[6]+dx*cos(-150), ny[6]-dy*sin(-120)-67);//nx[6], ny[6]-dy);
+                        arrow((-110*3.1416)/180, nx[6]-16*cos(-95), ny[6]+16*sin(-85)-13);
+
+                        Arc(hdc, nx[1], ny[1]-47, nx[6], ny[6]+47, nx[6], ny[6], nx[1], ny[1]);
+                        arrow((-270*3.1416)/180, nx[1], ny[1]+dy);//7-2
+                        continue;
+                    }
+
+                    MoveToEx(hdc, nx[i], ny[i], NULL);
+                    LineTo(hdc, nx[j], ny[j]);
+
+                    }
+
+            }
+        }
+
+        SelectObject(hdc, BPen);
+            for(i=0;i < n;i++){
+              Ellipse(hdc, nx[i]-dx,ny[i]-dy,nx[i]+dx,ny[i]+dy);
+              TextOut(hdc, nx[i]-dtx,ny[i]-dy/2,  nn[i], 2);
+            }
+
+        EndPaint(hWnd, &ps);
+        break;
+
+        case WM_DESTROY:
+        PostQuitMessage(0);
+        break;
+
+        default:
+        return(DefWindowProc(hWnd, messg, wParam, lParam));
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+
 
